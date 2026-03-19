@@ -18,12 +18,12 @@ export const segments: Segment[] = [
 ];
 
 const weightedValues = [
-  // High values (~50%)
-  200, 200, 200,
-  500, 500,
-  1000, 1000,
+  // High values (~65%, mostly 500 and 1000)
+  200,
+  500, 500, 500, 500, 500,
+  1000, 1000, 1000, 1000, 1000, 1000,
   // Medium
-  50, 50, 50, 50,
+  50, 50, 50,
   // Low values
   1, 2, 5, 10, 20,
 ];
