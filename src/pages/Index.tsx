@@ -55,8 +55,15 @@ export default function Index() {
       )}
 
       {/* Footer */}
-      <footer className="pb-6 text-center text-muted-foreground text-xs">
-        Made by <span className="text-primary font-semibold">Rony</span>
+      <footer className="pb-6 text-center">
+        <a
+          href="https://www.facebook.com/share/1Lq4eRNpiL/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block px-4 py-2 text-xs font-semibold rounded-full bg-gradient-to-r from-eid-gold to-eid-blue text-primary-foreground hover:scale-105 transition-transform"
+        >
+          Made by Rony
+        </a>
       </footer>
     </div>
   );
