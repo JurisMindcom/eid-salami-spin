@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import SpinningWheel from '@/components/SpinningWheel';
 import ResultModal from '@/components/ResultModal';
 import SpinCounter from '@/components/SpinCounter';
+import logo from '@/assets/logo.jpg';
 
 export default function Index() {
   const [result, setResult] = useState<number | null>(null);
