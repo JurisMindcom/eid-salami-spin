@@ -19,15 +19,24 @@ export default function SpinningWheel({ onResult }: Props) {
     if (spinning) return;
     setSpinning(true);
 
-    const winIndex = getWeightedRandomIndex();
-    // Calculate target: land on the middle of the winning segment
-    // The pointer is at the top (0°/360°). Segment 0 starts at 0°.
-    // We need the winning segment's center to align with the top pointer.
-    const segmentCenter = winIndex * SEGMENT_ANGLE + SEGMENT_ANGLE / 2;
-    const extraRotations = (3 + Math.random() * 3) * 360; // 3-6 full rotations
-    const targetRotation = rotation + extraRotations + (360 - segmentCenter - (rotation % 360) + 360) % 360;
+    const winIndex = getRandomIndex();
+    const winValue = segments[winIndex].value;
 
-    const duration = 3000 + Math.random() * 2000;
+    // Pointer is at top (0°). Wheel rotates clockwise.
+    // Segment i spans from i*SEGMENT_ANGLE to (i+1)*SEGMENT_ANGLE.
+    // To land pointer on segment center: rotate so that segment center aligns with top.
+    // We need: (rotation % 360) + segmentCenter ≡ 360 (or 0) → rotation lands center at top
+    // Target: the wheel's segment center for winIndex should be under the pointer (top).
+    // Segment center angle = winIndex * SEGMENT_ANGLE + SEGMENT_ANGLE / 2
+    // We need total rotation such that (totalRotation % 360) = 360 - segmentCenter
+    const segmentCenter = winIndex * SEGMENT_ANGLE + SEGMENT_ANGLE / 2;
+    const landAngle = (360 - segmentCenter + 360) % 360;
+    const fullSpins = (5 + Math.floor(Math.random() * 3)) * 360; // 5-7 full spins
+    const currentMod = rotation % 360;
+    const extraNeeded = (landAngle - currentMod + 360) % 360;
+    const targetRotation = rotation + fullSpins + extraNeeded;
+
+    const duration = 5500 + Math.random() * 1000; // 5.5-6.5 seconds
     const startTime = performance.now();
     const startRotation = rotation;
     const totalDelta = targetRotation - startRotation;
@@ -53,7 +62,7 @@ export default function SpinningWheel({ onResult }: Props) {
       } else {
         setSpinning(false);
         playWinSound();
-        onResult(segments[winIndex].value);
+        onResult(winValue);
       }
     };
 
