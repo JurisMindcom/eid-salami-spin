@@ -35,7 +35,8 @@ export default function Index() {
       </div>
 
       {/* Header */}
-      <header className="pt-8 pb-4 text-center">
+      <header className="pt-6 pb-4 text-center flex flex-col items-center">
+        <img src={logo} alt="ঈদ সালামি" className="w-24 h-24 md:w-32 md:h-32 rounded-2xl shadow-lg mb-3 object-cover" />
         <h1 className="text-4xl md:text-5xl font-black text-glow text-primary tracking-tight">
           EidSalami.com
         </h1>
