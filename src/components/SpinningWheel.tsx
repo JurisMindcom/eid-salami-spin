@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { segments, getWeightedRandomIndex } from '@/lib/wheelConfig';
+import { segments, getRandomIndex } from '@/lib/wheelConfig';
 import { playTickSound, playWinSound } from '@/lib/sounds';
 
 interface Props {
