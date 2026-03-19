@@ -17,6 +17,18 @@ export const segments: Segment[] = [
   { label: '৳1000', value: 1000, color: '#fbbf24' },
 ];
 
+const weightedValues = [
+  // High values (~50%)
+  200, 200, 200,
+  500, 500,
+  1000, 1000,
+  // Medium
+  50, 50, 50, 50,
+  // Low values
+  1, 2, 5, 10, 20,
+];
+
 export function getRandomIndex(): number {
-  return Math.floor(Math.random() * segments.length);
+  const selectedValue = weightedValues[Math.floor(Math.random() * weightedValues.length)];
+  return segments.findIndex((s) => s.value === selectedValue);
 }
