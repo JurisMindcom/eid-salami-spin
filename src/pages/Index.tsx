@@ -1,10 +1,15 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import SpinningWheel from '@/components/SpinningWheel';
 import ResultModal from '@/components/ResultModal';
 import SpinCounter from '@/components/SpinCounter';
+import NameEntry from '@/components/NameEntry';
+import { AdminButton } from '@/components/AdminPanel';
 import logo from '@/assets/logo.jpg';
 
 export default function Index() {
+  const [username, setUsername] = useState<string | null>(() => {
+    return localStorage.getItem('username');
+  });
   const [result, setResult] = useState<number | null>(null);
   const [spinCount, setSpinCount] = useState(() => {
     return parseInt(localStorage.getItem('eidSpinCount') || '0', 10);
@@ -15,15 +20,30 @@ export default function Index() {
 
   const handleResult = useCallback((value: number) => {
     setResult(value);
-    const now = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const now = new Date().toLocaleString();
+    const displayTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     setSpinCount((c) => {
       const next = c + 1;
       localStorage.setItem('eidSpinCount', String(next));
       return next;
     });
-    setLastSpinTime(now);
-    localStorage.setItem('eidLastSpin', now);
+    setLastSpinTime(displayTime);
+    localStorage.setItem('eidLastSpin', displayTime);
+
+    // Save to spin history for admin
+    const record = {
+      name: localStorage.getItem('username') || 'Unknown',
+      amount: value,
+      time: now,
+    };
+    const history = JSON.parse(localStorage.getItem('spinHistory') || '[]');
+    history.unshift(record);
+    localStorage.setItem('spinHistory', JSON.stringify(history));
   }, []);
+
+  if (!username) {
+    return <NameEntry onSubmit={(name) => setUsername(name)} />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center relative overflow-hidden">
@@ -34,14 +54,22 @@ export default function Index() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-eid-gold/5 blur-3xl" />
       </div>
 
+      {/* Admin */}
+      <AdminButton />
+
       {/* Header */}
-      <header className="pt-6 pb-4 text-center flex flex-col items-center">
+      <header className="pt-6 pb-2 text-center flex flex-col items-center">
         <img src={logo} alt="ঈদ সালামি" className="w-24 h-24 md:w-32 md:h-32 rounded-2xl shadow-lg mb-3 object-cover" />
         <h1 className="text-4xl md:text-5xl font-black text-glow text-primary tracking-tight">
           EidSalami.com
         </h1>
         <p className="text-muted-foreground text-sm mt-2">🌙 ঈদ মোবারক — Spin & Win! 🌙</p>
       </header>
+
+      {/* Username display */}
+      <p className="text-sm text-muted-foreground mt-1 mb-2">
+        খেলছেন — <span className="text-primary font-semibold">{username}</span>
+      </p>
 
       {/* Wheel */}
       <main className="flex-1 flex items-center justify-center py-4">
@@ -53,7 +81,7 @@ export default function Index() {
 
       {/* Result Modal */}
       {result !== null && (
-        <ResultModal amount={result} onClose={() => setResult(null)} />
+        <ResultModal amount={result} username={username} onClose={() => setResult(null)} />
       )}
 
       {/* Footer */}
