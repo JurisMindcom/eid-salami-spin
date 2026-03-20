@@ -1,9 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import SpinningWheel from '@/components/SpinningWheel';
 import ResultModal from '@/components/ResultModal';
 import SpinCounter from '@/components/SpinCounter';
 import NameEntry from '@/components/NameEntry';
 import { AdminButton } from '@/components/AdminPanel';
+import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.jpg';
 
 export default function Index() {
@@ -11,34 +12,39 @@ export default function Index() {
     return localStorage.getItem('username');
   });
   const [result, setResult] = useState<number | null>(null);
-  const [spinCount, setSpinCount] = useState(() => {
-    return parseInt(localStorage.getItem('eidSpinCount') || '0', 10);
-  });
-  const [lastSpinTime, setLastSpinTime] = useState<string | null>(() => {
-    return localStorage.getItem('eidLastSpin');
-  });
+  const [spinCount, setSpinCount] = useState(0);
 
-  const handleResult = useCallback((value: number) => {
-    setResult(value);
-    const now = new Date().toLocaleString();
-    const displayTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    setSpinCount((c) => {
-      const next = c + 1;
-      localStorage.setItem('eidSpinCount', String(next));
-      return next;
-    });
-    setLastSpinTime(displayTime);
-    localStorage.setItem('eidLastSpin', displayTime);
-
-    // Save to spin history for admin
-    const record = {
-      name: localStorage.getItem('username') || 'Unknown',
-      amount: value,
-      time: now,
+  // Load global spin count on mount + realtime
+  useEffect(() => {
+    const fetchCount = async () => {
+      const { data } = await supabase
+        .from('spin_stats')
+        .select('total_spins')
+        .eq('id', 'global')
+        .single();
+      if (data) setSpinCount(data.total_spins);
     };
-    const history = JSON.parse(localStorage.getItem('spinHistory') || '[]');
-    history.unshift(record);
-    localStorage.setItem('spinHistory', JSON.stringify(history));
+    fetchCount();
+
+    const channel = supabase
+      .channel('spin_stats_changes')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'spin_stats' }, (payload) => {
+        setSpinCount((payload.new as { total_spins: number }).total_spins);
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  const handleResult = useCallback(async (value: number) => {
+    setResult(value);
+    const name = localStorage.getItem('username') || 'Unknown';
+
+    // Insert spin record to database
+    await supabase.from('spins').insert({ name, amount: value });
+
+    // Increment global counter
+    await supabase.rpc('increment_spin_count');
   }, []);
 
   if (!username) {
@@ -77,7 +83,7 @@ export default function Index() {
       </main>
 
       {/* Counter */}
-      <SpinCounter count={spinCount} lastTime={lastSpinTime} />
+      <SpinCounter count={spinCount} />
 
       {/* Result Modal */}
       {result !== null && (

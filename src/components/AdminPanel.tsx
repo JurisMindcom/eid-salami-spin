@@ -1,21 +1,23 @@
 import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 const ADMIN_PASSWORD = '77889';
-
-interface SpinRecord {
-  name: string;
-  amount: number;
-  time: string;
-}
 
 export function AdminButton() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (password === ADMIN_PASSWORD) {
-      const history: SpinRecord[] = JSON.parse(localStorage.getItem('spinHistory') || '[]');
+      // Fetch spin history from database
+      const { data: history } = await supabase
+        .from('spins')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(500);
+
+      const records = history || [];
       const win = window.open('', '_blank');
       if (!win) return;
       win.document.write(`
@@ -31,15 +33,17 @@ export function AdminButton() {
             th { background: #1f2937; color: #fbbf24; font-weight: 700; }
             tr:hover { background: #1f2937; }
             .empty { text-align: center; padding: 40px; color: #6b7280; }
+            .stats { text-align: center; margin-bottom: 20px; color: #9ca3af; }
           </style>
         </head>
         <body>
           <h1>🌙 Admin Panel - Spin History</h1>
-          ${history.length === 0 ? '<p class="empty">No spins recorded yet</p>' : `
+          <p class="stats">Total Records: ${records.length}</p>
+          ${records.length === 0 ? '<p class="empty">No spins recorded yet</p>' : `
           <table>
             <thead><tr><th>#</th><th>Name</th><th>Amount</th><th>Time</th></tr></thead>
             <tbody>
-              ${history.map((r, i) => `<tr><td>${i + 1}</td><td>${r.name}</td><td>৳${r.amount.toLocaleString()}</td><td>${r.time}</td></tr>`).join('')}
+              ${records.map((r: any, i: number) => `<tr><td>${i + 1}</td><td>${r.name}</td><td>৳${r.amount.toLocaleString()}</td><td>${new Date(r.created_at).toLocaleString()}</td></tr>`).join('')}
             </tbody>
           </table>`}
         </body>
