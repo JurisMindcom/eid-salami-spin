@@ -34,6 +34,8 @@ export function AdminButton() {
             tr:hover { background: #1f2937; }
             .empty { text-align: center; padding: 40px; color: #6b7280; }
             .stats { text-align: center; margin-bottom: 20px; color: #9ca3af; }
+            .reset-btn { display: block; margin: 20px auto; padding: 10px 24px; background: #dc2626; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 14px; }
+            .reset-btn:hover { background: #b91c1c; }
           </style>
         </head>
         <body>
@@ -46,6 +48,7 @@ export function AdminButton() {
               ${records.map((r: any, i: number) => `<tr><td>${i + 1}</td><td>${r.name}</td><td>৳${r.amount.toLocaleString()}</td><td>${new Date(r.created_at).toLocaleString()}</td></tr>`).join('')}
             </tbody>
           </table>`}
+          <button class="reset-btn" onclick="if(confirm('⚠️ Are you sure? This will DELETE ALL spin history and reset the counter to 0!')){fetch('${import.meta.env.VITE_SUPABASE_URL}/rest/v1/rpc/reset_all_spins',{method:'POST',headers:{'apikey':'${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}','Content-Type':'application/json'}}).then(()=>{alert('✅ All data cleared!');location.reload()}).catch(()=>alert('❌ Error clearing data'))}">🗑️ Delete All Data & Reset</button>
         </body>
         </html>
       `);

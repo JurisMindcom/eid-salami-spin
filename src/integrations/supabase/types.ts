@@ -56,6 +56,7 @@ export type Database = {
     }
     Functions: {
       increment_spin_count: { Args: never; Returns: undefined }
+      reset_all_spins: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
