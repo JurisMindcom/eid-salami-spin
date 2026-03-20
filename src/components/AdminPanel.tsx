@@ -22,7 +22,8 @@ export function AdminButton() {
   const [loadError, setLoadError] = useState('');
 
   const clearStoredAppData = () => {
-    LOCAL_KEYS_TO_CLEAR.forEach((key) => localStorage.removeItem(key));
+    localStorage.clear();
+    sessionStorage.clear();
   };
 
   const loadHistory = async () => {
