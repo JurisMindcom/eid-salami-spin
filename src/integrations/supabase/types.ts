@@ -14,13 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      spin_stats: {
+        Row: {
+          id: string
+          total_spins: number
+        }
+        Insert: {
+          id?: string
+          total_spins?: number
+        }
+        Update: {
+          id?: string
+          total_spins?: number
+        }
+        Relationships: []
+      }
+      spins: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_spin_count: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
