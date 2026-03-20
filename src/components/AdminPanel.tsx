@@ -22,7 +22,8 @@ export function AdminButton() {
   const [loadError, setLoadError] = useState('');
 
   const clearStoredAppData = () => {
-    LOCAL_KEYS_TO_CLEAR.forEach((key) => localStorage.removeItem(key));
+    localStorage.clear();
+    sessionStorage.clear();
   };
 
   const loadHistory = async () => {
@@ -53,21 +54,42 @@ export function AdminButton() {
     setIsResetting(true);
     setLoadError('');
 
-    const { error } = await supabase.rpc('reset_all_spins');
+    try {
+      // Try RPC first
+      const { error: rpcError } = await supabase.rpc('reset_all_spins');
 
-    if (error) {
+      if (rpcError) {
+        // Fallback: direct fetch to the RPC endpoint
+        const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/rpc/reset_all_spins`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: '{}',
+        });
+
+        if (!res.ok) {
+          throw new Error('Reset failed');
+        }
+      }
+
+      // Clear ALL local data
+      clearStoredAppData();
+      setHistory([]);
+      setIsAdminOpen(false);
+      setShowPrompt(false);
+      setPassword('');
+      setIsResetting(false);
+
+      // Force full reload
+      window.location.reload();
+    } catch {
       setLoadError('Failed to clear data. Please try again.');
       setIsResetting(false);
-      return;
     }
-
-    clearStoredAppData();
-    setHistory([]);
-    setIsAdminOpen(false);
-    setShowPrompt(false);
-    setPassword('');
-    setIsResetting(false);
-    window.location.reload();
   };
 
   const handleSubmit = async () => {
