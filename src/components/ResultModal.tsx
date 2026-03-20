@@ -3,10 +3,11 @@ import confetti from 'canvas-confetti';
 
 interface Props {
   amount: number;
+  username: string;
   onClose: () => void;
 }
 
-export default function ResultModal({ amount, onClose }: Props) {
+export default function ResultModal({ amount, username, onClose }: Props) {
   useEffect(() => {
     const end = Date.now() + 2000;
     const fire = () => {
@@ -37,7 +38,7 @@ export default function ResultModal({ amount, onClose }: Props) {
 
         <div className="relative z-10">
           <p className="text-3xl mb-2">🎉</p>
-          <h2 className="text-xl font-bold text-foreground mb-1">অভিনন্দন!</h2>
+          <h2 className="text-xl font-bold text-foreground mb-1">অভিনন্দন {username}!</h2>
           <p className="text-muted-foreground text-sm mb-4">আপনার ঈদ সালামি</p>
 
           <div className="text-5xl font-black text-glow text-primary my-4">
