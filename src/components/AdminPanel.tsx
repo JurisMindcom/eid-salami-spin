@@ -2,15 +2,28 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 const ADMIN_PASSWORD = '77889';
+const LOCAL_KEYS_TO_CLEAR = ['username', 'spinHistory', 'eidSpinCount', 'eidLastSpin'] as const;
+
+type ResettableWindow = Window & typeof globalThis & {
+  __eidResetAllData?: () => Promise<void>;
+};
 
 export function AdminButton() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
 
+  const handleResetAll = async () => {
+    const { error } = await supabase.rpc('reset_all_spins');
+    if (error) {
+      throw error;
+    }
+
+    LOCAL_KEYS_TO_CLEAR.forEach((key) => localStorage.removeItem(key));
+  };
+
   const handleSubmit = async () => {
     if (password === ADMIN_PASSWORD) {
-      // Fetch spin history from database
       const { data: history } = await supabase
         .from('spins')
         .select('*')
@@ -18,8 +31,12 @@ export function AdminButton() {
         .limit(500);
 
       const records = history || [];
+      const openerWindow = window as ResettableWindow;
+      openerWindow.__eidResetAllData = handleResetAll;
+
       const win = window.open('', '_blank');
       if (!win) return;
+
       win.document.write(`
         <!DOCTYPE html>
         <html>
@@ -34,8 +51,9 @@ export function AdminButton() {
             tr:hover { background: #1f2937; }
             .empty { text-align: center; padding: 40px; color: #6b7280; }
             .stats { text-align: center; margin-bottom: 20px; color: #9ca3af; }
-            .reset-btn { display: block; margin: 20px auto; padding: 10px 24px; background: #dc2626; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 14px; }
+            .reset-btn { display: block; margin: 20px auto 0; padding: 10px 24px; background: #dc2626; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 14px; }
             .reset-btn:hover { background: #b91c1c; }
+            .reset-btn:disabled { opacity: 0.7; cursor: wait; }
           </style>
         </head>
         <body>
@@ -45,10 +63,43 @@ export function AdminButton() {
           <table>
             <thead><tr><th>#</th><th>Name</th><th>Amount</th><th>Time</th></tr></thead>
             <tbody>
-              ${records.map((r: any, i: number) => `<tr><td>${i + 1}</td><td>${r.name}</td><td>৳${r.amount.toLocaleString()}</td><td>${new Date(r.created_at).toLocaleString()}</td></tr>`).join('')}
+              ${records.map((r: { name: string; amount: number; created_at: string }, i: number) => `<tr><td>${i + 1}</td><td>${r.name}</td><td>৳${r.amount.toLocaleString()}</td><td>${new Date(r.created_at).toLocaleString()}</td></tr>`).join('')}
             </tbody>
           </table>`}
-          <button class="reset-btn" onclick="if(confirm('⚠️ Are you sure? This will DELETE ALL spin history and reset the counter to 0!')){fetch('${import.meta.env.VITE_SUPABASE_URL}/rest/v1/rpc/reset_all_spins',{method:'POST',headers:{'apikey':'${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}','Content-Type':'application/json'}}).then(()=>{alert('✅ All data cleared!');location.reload()}).catch(()=>alert('❌ Error clearing data'))}">🗑️ Delete All Data & Reset</button>
+          <button id="resetButton" class="reset-btn" onclick="resetAllData()">🗑️ Delete All Data & Reset</button>
+          <script>
+            async function resetAllData() {
+              if (!window.opener || !window.opener.__eidResetAllData) {
+                alert('Reset action is unavailable. Please reopen the admin panel.');
+                return;
+              }
+
+              const confirmed = window.confirm('⚠️ Are you sure? This will delete all spin history, reset the total spins to 0, and clear saved app data.');
+              if (!confirmed) return;
+
+              const button = document.getElementById('resetButton');
+              if (button) {
+                button.disabled = true;
+                button.textContent = 'Resetting...';
+              }
+
+              try {
+                await window.opener.__eidResetAllData();
+                if (window.opener && !window.opener.closed) {
+                  window.opener.location.reload();
+                }
+                window.alert('✅ All data cleared. The app is now back to a fresh state.');
+                window.close();
+              } catch (error) {
+                console.error(error);
+                window.alert('❌ Failed to clear data. Please try again.');
+                if (button) {
+                  button.disabled = false;
+                  button.textContent = '🗑️ Delete All Data & Reset';
+                }
+              }
+            }
+          </script>
         </body>
         </html>
       `);
